@@ -872,6 +872,14 @@ func makeOptinNotifyHook(unsubHeader bool, u *UrlConfig, q *models.Queries, i *i
 			return 0, nil
 		}
 
+		lists, customSent, err := sendCustomOptins(sub, lists, u, unsubHeader)
+		if err != nil {
+			return customSent, err
+		}
+		if len(lists) == 0 {
+			return customSent, nil
+		}
+
 		var (
 			out      = subOptin{Subscriber: sub, Lists: lists}
 			qListIDs = url.Values{}
@@ -901,6 +909,6 @@ func makeOptinNotifyHook(unsubHeader bool, u *UrlConfig, q *models.Queries, i *i
 			return 0, err
 		}
 
-		return len(lists), nil
+		return len(lists) + customSent, nil
 	}
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/knadh/koanf/providers/env"
 	"github.com/knadh/koanf/v2"
 	"github.com/knadh/listmonk/internal/auth"
+	"github.com/knadh/listmonk/internal/automation"
 	"github.com/knadh/listmonk/internal/bounce"
 	"github.com/knadh/listmonk/internal/buflog"
 	"github.com/knadh/listmonk/internal/captcha"
@@ -33,25 +34,26 @@ import (
 
 // App contains the "global" shared components, controllers and fields.
 type App struct {
-	cfg        *Config
-	urlCfg     *UrlConfig
-	fs         stuffbin.FileSystem
-	db         *sqlx.DB
-	queries    *models.Queries
-	core       *core.Core
-	manager    *manager.Manager
-	messengers []manager.Messenger
-	emailMsgr  manager.Messenger
-	importer   *subimporter.Importer
-	auth       *auth.Auth
-	media      media.Store
-	bounce     *bounce.Manager
-	captcha    *captcha.Captcha
-	i18n       *i18n.I18n
-	pg         *paginator.Paginator
-	events     *events.Events
-	log        *log.Logger
-	bufLog     *buflog.BufLog
+	cfg             *Config
+	urlCfg          *UrlConfig
+	fs              stuffbin.FileSystem
+	db              *sqlx.DB
+	queries         *models.Queries
+	core            *core.Core
+	manager         *manager.Manager
+	messengers      []manager.Messenger
+	emailMsgr       manager.Messenger
+	automationEmail *email.Emailer
+	importer        *subimporter.Importer
+	auth            *auth.Auth
+	media           media.Store
+	bounce          *bounce.Manager
+	captcha         *captcha.Captcha
+	i18n            *i18n.I18n
+	pg              *paginator.Paginator
+	events          *events.Events
+	log             *log.Logger
+	bufLog          *buflog.BufLog
 
 	about         about
 	fnOptinNotify func(models.Subscriber, []int) (int, error)
@@ -300,6 +302,16 @@ func main() {
 		needsUserSetup: !hasUsers,
 	}
 
+	automationCtx, stopAutomations := context.WithCancel(context.Background())
+	automationDone := make(chan struct{})
+	if !ko.Bool("passive") {
+		app.automationEmail = initAutomationEmail()
+		worker := &automation.Worker{DB: db, Send: app.sendAutomation, OnError: func(err error) { lo.Printf("automation worker: %v", err) }}
+		go func() { defer close(automationDone); worker.Run(automationCtx) }()
+	} else {
+		close(automationDone)
+	}
+
 	// Star the update checker.
 	if ko.Bool("app.check_updates") {
 		go app.checkUpdates(versionString, time.Hour*24)
@@ -320,6 +332,12 @@ func main() {
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
 		srv.Shutdown(ctx)
+
+		stopAutomations()
+		<-automationDone
+		if app.automationEmail != nil {
+			app.automationEmail.Close()
+		}
 
 		// Close the campaign manager.
 		mgr.Close()

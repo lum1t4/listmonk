@@ -574,3 +574,15 @@ export const disableTOTP = (id, data) => http.delete(
   `/api/users/${id}/twofa`,
   { data },
 );
+
+// Native confirmation-triggered automations. Preserve user-provided JSON keys.
+export const getAutomations = () => http.get('/api/automations', { camelCase: false });
+export const saveAutomation = (data) => (data.id
+  ? http.put(`/api/automations/${data.id}`, data, { camelCase: false })
+  : http.post('/api/automations', data, { camelCase: false }));
+export const getAutomationJobs = () => http.get('/api/automation-jobs', { camelCase: false });
+export const automationJobAction = (id, data) => http.post(`/api/automation-jobs/${id}/actions`, data);
+export const getConfirmationTemplates = () => http.get('/api/confirmation-templates', { camelCase: false });
+export const saveConfirmationTemplate = (data) => http.put(`/api/confirmation-templates/${data.list_id}`, data);
+export const previewConfirmationTemplate = (data) => http.post('/api/confirmation-templates/preview', data);
+export const testConfirmationTemplate = (data) => http.post('/api/confirmation-templates/test', data);

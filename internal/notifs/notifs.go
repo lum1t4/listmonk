@@ -111,3 +111,10 @@ func GetTplSubject(subject string, body []byte) (string, []byte) {
 
 	return strings.TrimSpace(string(m[1])), reTitle.ReplaceAll(body, []byte(""))
 }
+
+// SendHTML sends a rendered, administrator-configured system email through the
+// same SMTP messenger as native notifications.
+func SendHTML(to, subject, body string, hdr textproto.MIMEHeader) error {
+	return no.em.Push(models.Message{From: no.opt.FromEmail, To: []string{to}, Subject: subject,
+		Body: []byte(body), ContentType: models.CampaignContentTypeHTML, Headers: hdr})
+}

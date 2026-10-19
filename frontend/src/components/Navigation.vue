@@ -1,5 +1,8 @@
 <template>
   <b-menu-list>
+    <b-menu-item v-if="$store.state.profile.userRole && $store.state.profile.userRole.id === 1"
+      :to="{ name: 'automations' }" tag="router-link" :active="activeItem.automations"
+      icon="lightning-bolt-outline" label="Automations" data-cy="automations" />
     <b-menu-item :to="{ name: 'dashboard' }" tag="router-link" :active="activeItem.dashboard"
       icon="view-dashboard-variant-outline" :label="$t('menu.dashboard')" /><!-- dashboard -->
 

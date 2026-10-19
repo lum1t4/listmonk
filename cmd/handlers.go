@@ -99,6 +99,16 @@ func initHTTPHandlers(e *echo.Echo, a *App) {
 		)
 
 		// API endpoints.
+
+		g.GET("/api/automations", automationAdmin(a.GetAutomations))
+		g.POST("/api/automations", automationAdmin(a.SaveAutomation))
+		g.PUT("/api/automations/:id", automationAdmin(hasID(a.SaveAutomation)))
+		g.GET("/api/automation-jobs", automationAdmin(a.GetAutomationJobs))
+		g.POST("/api/automation-jobs/:id/actions", automationAdmin(hasID(a.AutomationJobAction)))
+		g.GET("/api/confirmation-templates", automationAdmin(a.GetConfirmationTemplates))
+		g.PUT("/api/confirmation-templates/:id", automationAdmin(hasID(a.SaveConfirmationTemplate)))
+		g.POST("/api/confirmation-templates/preview", automationAdmin(a.PreviewConfirmationTemplate))
+		g.POST("/api/confirmation-templates/test", automationAdmin(a.TestConfirmationTemplate))
 		g.GET("/api/health", a.HealthCheck)
 		g.GET("/api/config", a.GetServerConfig)
 		g.GET("/api/lang/:lang", a.GetI18nLang)
