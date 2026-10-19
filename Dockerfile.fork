@@ -1,4 +1,4 @@
-FROM node:22-bookworm AS frontend
+FROM --platform=$BUILDPLATFORM node:22-bookworm AS frontend
 WORKDIR /src
 ENV CYPRESS_INSTALL_BINARY=0
 COPY frontend/package.json frontend/yarn.lock frontend/
@@ -8,15 +8,17 @@ COPY frontend frontend
 COPY static static
 RUN cd frontend/email-builder && yarn build && mkdir -p ../public/static/email-builder && cp -r dist/* ../public/static/email-builder/ && cd .. && yarn build
 
-FROM golang:1.26.1 AS backend
+FROM --platform=$BUILDPLATFORM golang:1.26.1 AS backend
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 COPY --from=frontend /src/frontend/dist ./frontend/dist
+ARG TARGETOS
+ARG TARGETARCH
 ARG VERSION=v6.3.0-automation.1
 ARG COMMIT=local
-RUN CGO_ENABLED=0 go build -trimpath -o listmonk -ldflags="-s -w -X main.versionString=${VERSION} -X main.buildString=${VERSION}-${COMMIT}" ./cmd && go install github.com/knadh/stuffbin/... && /go/bin/stuffbin -a stuff -in listmonk -out listmonk config.toml.sample schema.sql queries:/queries permissions.json static/public:/public static/email-templates frontend/dist:/admin i18n:/i18n
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -o listmonk -ldflags="-s -w -X main.versionString=${VERSION} -X main.buildString=${VERSION}-${COMMIT}" ./cmd && go install github.com/knadh/stuffbin/... && /go/bin/stuffbin -a stuff -in listmonk -out listmonk config.toml.sample schema.sql queries:/queries permissions.json static/public:/public static/email-templates frontend/dist:/admin i18n:/i18n
 
 FROM alpine:3.22
 RUN apk --no-cache add ca-certificates tzdata shadow su-exec
