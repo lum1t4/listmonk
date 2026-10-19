@@ -57,6 +57,8 @@ bash tests/run-local.sh # disposable stock-v5 upgrade + real HTTP/SMTP + fresh i
 
 Database tests create isolated schemas and cover concurrent confirmation and claiming, snapshots, enrollment atomicity, pause/resume, delivery eligibility, retry limits, ambiguous sends, restart recovery and deletion. Set `AUTOMATION_TEST_DSN` to run them; without it, integration tests skip.
 
-The GitHub `Fork container` workflow runs tests against PostgreSQL and publishes `ghcr.io/<owner>/listmonk:sha-<commit>` and `:automation`. Deploy the immutable digest, run `--upgrade --yes`, and preserve the existing configuration and upload volumes. No branded deployment content belongs in this repository.
+The GitHub `Fork container` workflow runs tests against PostgreSQL and publishes `ghcr.io/<owner>/listmonk-automations:sha-<commit>` and `:automation`. Deploy the immutable digest, run `--upgrade --yes`, and preserve the existing configuration and upload volumes. No branded deployment content belongs in this repository.
 
 Before upgrading, back up the database, uploaded files and deployment configuration. A rollback to v5 requires restoring the pre-upgrade database as well as the old image; do not run v5 against the upgraded schema. Keep backups and credentials out of Git. Deploying this fork does not enable any automation automatically.
+
+The workflow publishes to a dedicated `listmonk-automations` package using `GITHUB_TOKEN`. GitHub grants the creating workflow repository package access automatically. A package originally created with a personal login may require an explicit Actions access grant in its package settings; source labels alone do not grant this access. Existing deployments pinned to a previous package digest continue to use that image.

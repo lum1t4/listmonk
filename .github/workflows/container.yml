@@ -4,6 +4,9 @@ on:
     branches: [feature/marketing-automations]
     tags: ['v*-automation.*']
   workflow_dispatch:
+env:
+  # Created by GITHUB_TOKEN so the workflow repository owns package access.
+  REGISTRY_IMAGE: ghcr.io/${{ github.repository }}-automations
 permissions:
   contents: read
   packages: write
@@ -55,7 +58,7 @@ jobs:
           file: Dockerfile.fork
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: ghcr.io/${{ github.repository }}:automation,ghcr.io/${{ github.repository }}:sha-${{ github.sha }}
+          tags: ${{ env.REGISTRY_IMAGE }}:automation,${{ env.REGISTRY_IMAGE }}:sha-${{ github.sha }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
