@@ -334,14 +334,12 @@ func initAutomationEmail() *email.Emailer {
 		if err := item.UnmarshalWithConf("", &s, koanf.UnmarshalConf{Tag: "json"}); err != nil {
 			lo.Fatalf("automation SMTP config: %v", err)
 		}
-		s.MaxMessageRetries = 1
-		s.MaxConns = 1
 		servers = append(servers, s)
 	}
 	if len(servers) == 0 {
 		return nil
 	}
-	m, err := email.New("automation-email", servers...)
+	m, err := email.NewSingleAttempt("automation-email", servers...)
 	if err != nil {
 		lo.Fatalf("automation SMTP initialization: %v", err)
 	}
